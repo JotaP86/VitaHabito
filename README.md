@@ -2,38 +2,51 @@
 
 Aplicación Android de gestión de hábitos saludables, desarrollada en Kotlin con Android Studio como proyecto del ciclo de Desarrollo de Aplicaciones Multiplataforma (DAM).
 
-Cada usuario crea su cuenta, inicia sesión y gestiona su propia lista de hábitos. Los datos se guardan en local, en una base de datos SQLite del dispositivo.
+Cada usuario crea su cuenta, inicia sesión y gestiona su propia lista de hábitos, clasificados por categorías. Los datos se guardan en local, en una base de datos SQLite del dispositivo.
 
 ## Funcionalidades
 
-- **Registro de usuario:** nombre de usuario, contraseña y repetición de contraseña. Comprueba que no haya campos vacíos, que las contraseñas coincidan y que el usuario no exista ya.
-- **Inicio de sesión:** valida usuario y contraseña contra la base de datos local.
-- **Menú principal:** acceso a "Añadir hábito" y "Ver mis hábitos".
-- **Crear hábito:** formulario con nombre y descripción, asociado al usuario que ha iniciado sesión.
-- **Listado de hábitos:** muestra solo los hábitos del usuario actual y se actualiza al volver a la pantalla.
-- **Detalle de hábito:** muestra nombre y descripción, con opciones para editar y eliminar.
-- **Editar y eliminar hábitos:** actualización del nombre y la descripción, y borrado del hábito.
+- **Registro de usuario:** nombre de usuario, contraseña y repetición de contraseña. Comprueba que ningún campo esté vacío, que las dos contraseñas coincidan y que el nombre de usuario no exista ya.
+- **Inicio de sesión:** valida el usuario y la contraseña contra la base de datos local.
+- **Menú principal:** acceso a "Añadir Hábito" y "Ver Mis Hábitos".
+- **Crear hábito:** nombre, descripción y categoría, que se elige en un desplegable. El hábito queda asociado al usuario que ha iniciado sesión.
+- **Listado de hábitos:** muestra los hábitos del usuario con su nombre, descripción y categoría, y se actualiza al volver a la pantalla.
+- **Detalle de hábito:** muestra el nombre, la descripción y la categoría, con las opciones de editar y eliminar.
+- **Editar hábito:** permite cambiar el nombre, la descripción y la categoría. El nombre es obligatorio.
+- **Eliminar hábito:** borra el hábito y vuelve al listado.
+- **Categorías por defecto:** al crear la base de datos se insertan Salud, Productividad y Personal.
 
 ## Tecnologías
 
-- **Lenguaje:** Kotlin 2.0.21
-- **IDE:** Android Studio
-- **Build:** Gradle 8.13 (wrapper incluido), Android Gradle Plugin 8.13.1, Kotlin DSL (`build.gradle.kts`) y catálogo de versiones (`gradle/libs.versions.toml`)
-- **SDK:** minSdk 24 (Android 7.0), targetSdk 36 y compileSdk 36
-- **Java:** 11
-- **Interfaz:** layouts XML con `AppCompatActivity`, `ListView` y un `BaseAdapter` propio
-- **Estilos:** Material Components (tema `Theme.MaterialComponents.DayNight.NoActionBar`)
-- **Persistencia:** SQLite mediante `SQLiteOpenHelper`, con claves foráneas activadas
-- **Tests:** JUnit 4 y AndroidX Test / Espresso (plantillas de ejemplo)
+| Elemento | Versión |
+|---|---|
+| Kotlin | 2.0.21 |
+| Gradle (wrapper) | 8.13 |
+| Android Gradle Plugin | 8.13.1 |
+| compileSdk / targetSdk | 36 |
+| minSdk | 24 (Android 7.0) |
+| Java (source, target y jvmTarget) | 11 |
+| AndroidX AppCompat | 1.6.1 |
+| Material Components | 1.9.0 |
+
+- **Interfaz:** layouts XML con `AppCompatActivity`, `ListView` con un `BaseAdapter` propio y `Spinner` para seleccionar la categoría. Tema `Theme.Material3.DayNight.NoActionBar`.
+- **Persistencia:** SQLite mediante `SQLiteOpenHelper`, con las claves foráneas activadas.
+- **Build:** Gradle con Kotlin DSL (`build.gradle.kts`) y catálogo de versiones (`gradle/libs.versions.toml`).
 
 ## Base de datos
 
-Fichero `vitahabito.db`, gestionado por `DatabaseHelper`:
+La base de datos `vitahabito.db` (versión 5) se gestiona desde `DatabaseHelper` y tiene cuatro tablas:
 
-| Tabla    | Campos                                                         |
-|----------|----------------------------------------------------------------|
-| `users`  | `id` (PK, autoincremental), `username` (único), `password`     |
-| `habits` | `id` (PK, autoincremental), `name`, `description`, `user_id` (FK a `users.id`, `ON DELETE CASCADE`) |
+| Tabla | Contenido |
+|---|---|
+| `users` | Usuarios registrados. El nombre de usuario es único. |
+| `categories` | Categorías de hábitos. El nombre es único. |
+| `habits` | Hábitos, con referencia al usuario (`user_id`) y a la categoría (`category_id`). |
+| `habit_logs` | Registro diario de cada hábito: fecha, estado y notas, con un único registro por hábito y fecha. |
+
+La tabla `habit_logs` y sus métodos de acceso (`insertOrUpdateLog` y `getLogsByHabit`) existen para el registro diario de hábitos, pero esta versión de la aplicación no incluye la pantalla que los utiliza.
+
+El diagrama entidad-relación y el detalle de cada columna están en [docs/database.md](docs/database.md).
 
 ## Estructura del proyecto
 
@@ -42,32 +55,31 @@ VitaHabito/
 ├── app/
 │   ├── build.gradle.kts
 │   ├── proguard-rules.pro
-│   └── src/
-│       ├── main/
-│       │   ├── AndroidManifest.xml
-│       │   ├── java/com/vitahabitoapp/
-│       │   │   ├── LoginActivity.kt         Pantalla inicial: inicio de sesión
-│       │   │   ├── RegisterActivity.kt      Registro de usuarios
-│       │   │   ├── MenuActivity.kt          Menú principal
-│       │   │   ├── HabitFormActivity.kt     Alta de hábitos
-│       │   │   ├── HabitListActivity.kt     Listado de hábitos del usuario
-│       │   │   ├── HabitDetailActivity.kt   Detalle y borrado de un hábito
-│       │   │   ├── HabitEditActivity.kt     Edición de un hábito
-│       │   │   ├── HabitAdapter.kt          Adaptador del ListView
-│       │   │   ├── Habit.kt                 Modelo de datos
-│       │   │   └── DatabaseHelper.kt        Acceso a SQLite (usuarios y hábitos)
-│       │   └── res/
-│       │       ├── layout/                  Pantallas en XML
-│       │       ├── values/                  Colores, textos y tema
-│       │       ├── drawable/ y mipmap-*/    Iconos de la aplicación
-│       │       └── xml/                     Reglas de copia de seguridad
-│       ├── test/                            Tests unitarios
-│       └── androidTest/                     Tests instrumentados
+│   └── src/main/
+│       ├── AndroidManifest.xml
+│       ├── java/com/vitahabitoapp/
+│       │   ├── LoginActivity.kt         Inicio de sesión (pantalla inicial)
+│       │   ├── RegisterActivity.kt      Registro de usuarios
+│       │   ├── MenuActivity.kt          Menú principal
+│       │   ├── HabitFormActivity.kt     Alta de hábitos
+│       │   ├── HabitListActivity.kt     Listado de hábitos del usuario
+│       │   ├── HabitDetailActivity.kt   Detalle y borrado de un hábito
+│       │   ├── HabitEditActivity.kt     Edición de un hábito
+│       │   ├── HabitAdapter.kt          Adaptador del listado
+│       │   ├── Habit.kt                 Modelo de hábito
+│       │   ├── Category.kt              Modelo de categoría
+│       │   ├── HabitLog.kt              Modelo de registro diario
+│       │   └── DatabaseHelper.kt        Acceso a SQLite
+│       └── res/
+│           ├── layout/                  Pantallas en XML
+│           ├── values/                  Colores, textos y tema
+│           ├── drawable/, mipmap-*/     Iconos de la aplicación
+│           └── xml/                     Reglas de copia de seguridad
+├── docs/
+│   └── database.md                      Modelo de datos
 ├── gradle/
 │   ├── libs.versions.toml
 │   └── wrapper/
-├── docs/
-│   └── screenshots/
 ├── build.gradle.kts
 ├── settings.gradle.kts
 ├── gradle.properties
@@ -79,9 +91,9 @@ VitaHabito/
 
 ### Requisitos
 
-- Android Studio reciente, compatible con Android Gradle Plugin 8.13
-- Android SDK 36 instalado
-- Un emulador o dispositivo con Android 7.0 (API 24) o superior
+- Android Studio compatible con Android Gradle Plugin 8.13
+- Android SDK 36
+- Emulador o dispositivo con Android 7.0 (API 24) o superior
 
 ### Con Android Studio
 
@@ -89,8 +101,8 @@ VitaHabito/
    ```bash
    git clone https://github.com/JotaP86/VitaHabito.git
    ```
-2. En Android Studio, elige **File > Open** y selecciona la carpeta `VitaHabito`.
-3. Espera a que termine la sincronización de Gradle. Android Studio crea automáticamente el fichero `local.properties` con la ruta de tu SDK.
+2. En Android Studio, abre la carpeta del proyecto con **File > Open**.
+3. Espera a que termine la sincronización de Gradle. Android Studio genera el fichero `local.properties` con la ruta del SDK.
 4. Selecciona un emulador o dispositivo y pulsa **Run**.
 
 ### Desde la línea de comandos
@@ -109,33 +121,22 @@ gradlew.bat assembleDebug
 
 El APK de depuración se genera en `app/build/outputs/apk/debug/`.
 
-### Uso
+## Uso
 
 1. En la pantalla de inicio, pulsa **Crear Cuenta** y registra un usuario.
 2. Inicia sesión con ese usuario.
-3. Desde el menú, añade hábitos o consulta tu lista.
-4. Toca un hábito de la lista para ver su detalle, editarlo o eliminarlo.
-
-## Capturas de pantalla
-
-Las capturas se añadirán en la carpeta [`docs/screenshots/`](docs/screenshots/).
-
-<!--
-Ejemplo para cuando estén disponibles:
-![Inicio de sesión](docs/screenshots/login.png)
-![Menú principal](docs/screenshots/menu.png)
-![Lista de hábitos](docs/screenshots/lista.png)
--->
+3. En el menú, pulsa **Añadir Hábito**, rellena el nombre y la descripción, elige una categoría y guarda.
+4. Pulsa **Ver Mis Hábitos** para consultar la lista.
+5. Toca un hábito para ver su detalle y, desde ahí, editarlo o eliminarlo.
 
 ## Mejoras previstas
 
-- Guardar las contraseñas con hash y sal en lugar de en texto plano.
-- Añadir migraciones de base de datos para conservar los datos al cambiar de versión.
-- Eliminar las dependencias de Jetpack Compose que no se usan, ya que la interfaz está hecha con layouts XML.
-
-## Estado de las pruebas
-
-La aplicación no se ha probado en un emulador desde el entorno en el que se preparó este repositorio.
+- Conectar el registro diario de hábitos a la interfaz.
+- Guardar las contraseñas con hash y sal.
+- Sustituir el borrado de tablas en `onUpgrade` por migraciones de base de datos que conserven los datos.
+- Validar que el nombre no esté vacío al crear un hábito.
+- Eliminar las dependencias de Jetpack Compose que no se usan.
+- Añadir tests automatizados.
 
 ## Autor
 
