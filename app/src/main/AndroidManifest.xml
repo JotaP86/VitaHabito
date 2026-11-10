@@ -38,6 +38,9 @@
         <!-- Editar -->
         <activity android:name=".HabitEditActivity" android:exported="false" />
 
+        <!-- Chequeo diario -->
+        <activity android:name=".DailyCheckActivity" android:exported="false" />
+
     </application>
 
 </manifest>
