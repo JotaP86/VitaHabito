@@ -10,7 +10,7 @@ class DatabaseHelper(context: Context) :
 
     companion object {
         const val DB_NAME = "vitahabito.db"
-        const val DB_VERSION = 5
+        const val DB_VERSION = 6
 
         // Tabla de usuarios
         const val TABLE_USERS = "users"
@@ -110,7 +110,7 @@ class DatabaseHelper(context: Context) :
         return try {
             val v = ContentValues().apply {
                 put(COL_USERNAME, username)
-                put(COL_PASSWORD, password)
+                put(COL_PASSWORD, PasswordHasher.hash(password))
             }
             db.insert(TABLE_USERS, null, v)
         } finally {
@@ -121,10 +121,12 @@ class DatabaseHelper(context: Context) :
     fun loginUser(username: String, password: String): Int {
         val db = readableDatabase
         val cursor = db.rawQuery(
-            "SELECT $COL_USER_ID FROM $TABLE_USERS WHERE $COL_USERNAME=? AND $COL_PASSWORD=?",
-            arrayOf(username, password)
+            "SELECT $COL_USER_ID, $COL_PASSWORD FROM $TABLE_USERS WHERE $COL_USERNAME=?",
+            arrayOf(username)
         )
-        val res = cursor.use { if (it.moveToFirst()) it.getInt(0) else -1 }
+        val res = cursor.use {
+            if (it.moveToFirst() && PasswordHasher.verify(password, it.getString(1) ?: "")) it.getInt(0) else -1
+        }
         db.close()
         return res
     }
