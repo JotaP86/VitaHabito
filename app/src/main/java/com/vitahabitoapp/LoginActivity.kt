@@ -37,7 +37,7 @@ class LoginActivity : AppCompatActivity() {
                 Toast.makeText(this, "Bienvenido", Toast.LENGTH_SHORT).show()
 
                 val intent = Intent(this, MenuActivity::class.java)
-                intent.putExtra("userId", userId)
+                intent.putExtra("user_id", userId)
                 startActivity(intent)
                 finish()
             } else {

@@ -13,20 +13,20 @@ class MenuActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_menu)
 
-        userId = intent.getIntExtra("userId", -1)
+        userId = intent.getIntExtra("user_id", -1)
 
         val btnAddHabit = findViewById<Button>(R.id.btnAddHabit)
         val btnViewHabits = findViewById<Button>(R.id.btnViewHabits)
 
         btnAddHabit.setOnClickListener {
             val intent = Intent(this, HabitFormActivity::class.java)
-            intent.putExtra("userId", userId)
+            intent.putExtra("user_id", userId)
             startActivity(intent)
         }
 
         btnViewHabits.setOnClickListener {
             val intent = Intent(this, HabitListActivity::class.java)
-            intent.putExtra("userId", userId)
+            intent.putExtra("user_id", userId)
             startActivity(intent)
         }
     }

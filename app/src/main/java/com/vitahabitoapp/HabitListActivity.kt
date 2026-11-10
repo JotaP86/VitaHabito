@@ -13,7 +13,7 @@ class HabitListActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_habit_list)
 
-        userId = intent.getIntExtra("userId", -1)
+        userId = intent.getIntExtra("user_id", -1)
 
         loadHabits()
     }

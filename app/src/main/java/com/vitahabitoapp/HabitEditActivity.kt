@@ -1,53 +1,79 @@
 package com.vitahabitoapp
 
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 
 class HabitEditActivity : AppCompatActivity() {
 
     private lateinit var db: DatabaseHelper
-    private var habitId: Int = -1
-    private var userId: Int = -1
+    private lateinit var etName: EditText
+    private lateinit var etDesc: EditText
+    private lateinit var spinnerCat: Spinner
+    private lateinit var btnSave: Button
+
+    private var habitId = -1
+    private var categories: List<Category> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_habit_edit)
 
         db = DatabaseHelper(this)
-
         habitId = intent.getIntExtra("HABIT_ID", -1)
-        userId = intent.getIntExtra("userId", -1)
 
-        val txtName = findViewById<EditText>(R.id.editHabitName)
-        val txtDesc = findViewById<EditText>(R.id.editHabitDescription)
-        val btnSave = findViewById<Button>(R.id.btnUpdateHabit)
+        etName = findViewById(R.id.editHabitName)
+        etDesc = findViewById(R.id.editHabitDescription)
+        spinnerCat = findViewById(R.id.spinnerEditCategory)
+        btnSave = findViewById(R.id.btnUpdateHabit)
 
-        val habit = db.getHabitById(habitId)
-        if (habit != null) {
-            txtName.setText(habit.name)
-            txtDesc.setText(habit.description)
-        }
+        loadCategories()
+        loadHabit()
 
         btnSave.setOnClickListener {
-            val newName = txtName.text.toString().trim()
-            val newDesc = txtDesc.text.toString().trim()
+            val name = etName.text.toString().trim()
+            val desc = etDesc.text.toString().trim()
 
-            if (newName.isEmpty() || newDesc.isEmpty()) {
-                Toast.makeText(this, "Completa todos los campos", Toast.LENGTH_SHORT).show()
+            if (name.isEmpty()) {
+                Toast.makeText(this, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            val rows = db.updateHabit(habitId, newName, newDesc)
+            val selectedCategory = categories[spinnerCat.selectedItemPosition]
 
-            if (rows > 0) {
-                Toast.makeText(this, "Hábito actualizado", Toast.LENGTH_SHORT).show()
-                finish()
-            } else {
-                Toast.makeText(this, "Error al actualizar", Toast.LENGTH_SHORT).show()
-            }
+
+            db.updateHabit(
+                habitId = habitId,
+                name = name,
+                description = desc,
+                categoryId = selectedCategory.id
+            )
+
+            Toast.makeText(this, "Hábito actualizado", Toast.LENGTH_SHORT).show()
+            finish()
+        }
+    }
+
+    private fun loadCategories() {
+        categories = db.getAllCategories()
+
+        val adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            categories.map { it.name }
+        )
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerCat.adapter = adapter
+    }
+
+    private fun loadHabit() {
+        val habit = db.getHabitById(habitId)
+        if (habit != null) {
+            etName.setText(habit.name)
+            etDesc.setText(habit.description)
+
+            val index = categories.indexOfFirst { it.id == habit.categoryId }
+            if (index >= 0) spinnerCat.setSelection(index)
         }
     }
 }

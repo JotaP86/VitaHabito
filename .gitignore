@@ -16,12 +16,14 @@ local.properties
 .kotlin/
 
 # Binarios generados
+/app/release/
 *.apk
 *.aab
 
 # Claves de firma y configuracion de servicios
 *.jks
 *.keystore
+*.p12
 google-services.json
 
 # Sistema operativo

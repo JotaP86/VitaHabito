@@ -1,28 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
-    android:padding="20dp"
+    android:padding="24dp"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <EditText
-        android:id="@+id/editTextName"
+        android:id="@+id/etHabitName"
         android:hint="Nombre del hábito"
-        android:layout_marginBottom="15dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
     <EditText
-        android:id="@+id/editTextDescription"
+        android:id="@+id/etHabitDesc"
         android:hint="Descripción"
-        android:layout_marginBottom="20dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp" />
+
+    <Spinner
+        android:id="@+id/spinnerCategory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp" />
 
     <Button
         android:id="@+id/btnSaveHabit"
-        android:text="Guardar"
+        android:text="Guardar hábito"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp" />
 
 </LinearLayout>

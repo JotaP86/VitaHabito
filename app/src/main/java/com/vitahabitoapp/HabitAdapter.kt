@@ -9,6 +9,8 @@ import android.widget.TextView
 
 class HabitAdapter(private val context: Context, private val habits: List<Habit>) : BaseAdapter() {
 
+    private val db = DatabaseHelper(context)
+
     override fun getCount(): Int = habits.size
 
     override fun getItem(position: Int): Any = habits[position]
@@ -21,11 +23,15 @@ class HabitAdapter(private val context: Context, private val habits: List<Habit>
 
         val habitName = view.findViewById<TextView>(R.id.txtHabitName)
         val habitDesc = view.findViewById<TextView>(R.id.txtHabitDescription)
+        val habitCategory = view.findViewById<TextView>(R.id.txtHabitCategory)
 
         val habit = habits[position]
 
+        val category = db.getCategoryById(habit.categoryId)
+
         habitName.text = habit.name
         habitDesc.text = habit.description
+        habitCategory.text = "Categoría: ${category?.name ?: "Sin categoría"}"
 
         return view
     }

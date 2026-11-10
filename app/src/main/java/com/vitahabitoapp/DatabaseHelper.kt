@@ -2,42 +2,47 @@ package com.vitahabitoapp
 
 import android.content.ContentValues
 import android.content.Context
-import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
-/**
- * DatabaseHelper mejorado:
- * - Activa PRAGMA foreign_keys en onConfigure para que las FK funcionen.
- * - Maneja cierres de cursor/BD de forma segura.
- * - Añade getAllHabits() como utilidad.
- * - Métodos claros y documentados.
- */
 class DatabaseHelper(context: Context) :
     SQLiteOpenHelper(context, DB_NAME, null, DB_VERSION) {
 
     companion object {
-        private const val DB_NAME = "vitahabito.db"
-        private const val DB_VERSION = 2
+        const val DB_NAME = "vitahabito.db"
+        const val DB_VERSION = 5
 
-        // Tabla usuarios
+        // USERS
         const val TABLE_USERS = "users"
         const val COL_USER_ID = "id"
         const val COL_USERNAME = "username"
         const val COL_PASSWORD = "password"
 
-        // Tabla hábitos
+        // CATEGORIES
+        const val TABLE_CATEGORIES = "categories"
+        const val COL_CAT_ID = "id"
+        const val COL_CAT_NAME = "name"
+
+        // HABITS
         const val TABLE_HABITS = "habits"
         const val COL_HABIT_ID = "id"
         const val COL_HABIT_NAME = "name"
         const val COL_HABIT_DESC = "description"
         const val COL_HABIT_USER_ID = "user_id"
+        const val COL_HABIT_CATEGORY_ID = "category_id"
+
+        // LOGS
+        const val TABLE_LOGS = "habit_logs"
+        const val COL_LOG_ID = "id"
+        const val COL_LOG_HABIT_ID = "habit_id"
+        const val COL_LOG_DATE = "date"
+        const val COL_LOG_STATUS = "status"
+        const val COL_LOG_NOTES = "notes"
     }
 
-    // Habilitar foreign keys para que las relaciones funcionen correctamente
-    override fun onConfigure(db: SQLiteDatabase) {
+    override fun onConfigure(db: SQLiteDatabase?) {
         super.onConfigure(db)
-        db.setForeignKeyConstraintsEnabled(true)
+        db?.setForeignKeyConstraintsEnabled(true)
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -49,192 +54,249 @@ class DatabaseHelper(context: Context) :
             );
         """.trimIndent()
 
+        val createCategories = """
+            CREATE TABLE $TABLE_CATEGORIES (
+                $COL_CAT_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $COL_CAT_NAME TEXT UNIQUE
+            );
+        """.trimIndent()
+
         val createHabits = """
             CREATE TABLE $TABLE_HABITS (
                 $COL_HABIT_ID INTEGER PRIMARY KEY AUTOINCREMENT,
                 $COL_HABIT_NAME TEXT,
                 $COL_HABIT_DESC TEXT,
                 $COL_HABIT_USER_ID INTEGER,
-                FOREIGN KEY($COL_HABIT_USER_ID) REFERENCES $TABLE_USERS($COL_USER_ID) ON DELETE CASCADE
+                $COL_HABIT_CATEGORY_ID INTEGER,
+                FOREIGN KEY($COL_HABIT_USER_ID) REFERENCES $TABLE_USERS($COL_USER_ID),
+                FOREIGN KEY($COL_HABIT_CATEGORY_ID) REFERENCES $TABLE_CATEGORIES($COL_CAT_ID)
+            );
+        """.trimIndent()
+
+        val createLogs = """
+            CREATE TABLE $TABLE_LOGS (
+                $COL_LOG_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $COL_LOG_HABIT_ID INTEGER,
+                $COL_LOG_DATE TEXT,
+                $COL_LOG_STATUS INTEGER,
+                $COL_LOG_NOTES TEXT,
+                UNIQUE($COL_LOG_HABIT_ID, $COL_LOG_DATE),
+                FOREIGN KEY($COL_LOG_HABIT_ID) REFERENCES $TABLE_HABITS($COL_HABIT_ID)
             );
         """.trimIndent()
 
         db.execSQL(createUsers)
+        db.execSQL(createCategories)
         db.execSQL(createHabits)
+        db.execSQL(createLogs)
+
+        // Insert default categories
+        db.execSQL("INSERT INTO $TABLE_CATEGORIES ($COL_CAT_NAME) VALUES ('Salud')")
+        db.execSQL("INSERT INTO $TABLE_CATEGORIES ($COL_CAT_NAME) VALUES ('Productividad')")
+        db.execSQL("INSERT INTO $TABLE_CATEGORIES ($COL_CAT_NAME) VALUES ('Personal')")
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // En un entorno real deberías migrar datos; aquí simplificamos recreando tablas.
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_LOGS")
         db.execSQL("DROP TABLE IF EXISTS $TABLE_HABITS")
+        db.execSQL("DROP TABLE IF EXISTS $TABLE_CATEGORIES")
         db.execSQL("DROP TABLE IF EXISTS $TABLE_USERS")
         onCreate(db)
     }
 
-    // ---------------------------
-    // USUARIOS
-    // ---------------------------
-
-    /**
-     * Registra un usuario nuevo.
-     * Devuelve el id insertrado (>0) o -1 si falla (por ejemplo usuario repetido).
-     */
+    // -------------------
+    // USERS
+    // -------------------
     fun registerUser(username: String, password: String): Long {
         val db = writableDatabase
         return try {
-            val values = ContentValues().apply {
+            val v = ContentValues().apply {
                 put(COL_USERNAME, username)
                 put(COL_PASSWORD, password)
             }
-            db.insert(TABLE_USERS, null, values)
+            db.insert(TABLE_USERS, null, v)
         } finally {
             db.close()
         }
     }
 
-    /**
-     * Intenta hacer login con usuario/contraseña.
-     * Devuelve el userId (>0) si existe, o -1 si no coincide.
-     */
     fun loginUser(username: String, password: String): Int {
         val db = readableDatabase
-        var cursor: Cursor? = null
+        val cursor = db.rawQuery(
+            "SELECT $COL_USER_ID FROM $TABLE_USERS WHERE $COL_USERNAME=? AND $COL_PASSWORD=?",
+            arrayOf(username, password)
+        )
+        val res = cursor.use { if (it.moveToFirst()) it.getInt(0) else -1 }
+        db.close()
+        return res
+    }
+
+    // -------------------
+    // CATEGORIES
+    // -------------------
+    fun insertCategory(name: String): Long {
+        val db = writableDatabase
         return try {
-            val query = """
-                SELECT $COL_USER_ID FROM $TABLE_USERS
-                WHERE $COL_USERNAME = ? AND $COL_PASSWORD = ?
-            """.trimIndent()
-            cursor = db.rawQuery(query, arrayOf(username, password))
-            if (cursor.moveToFirst()) cursor.getInt(0) else -1
+            val v = ContentValues().apply { put(COL_CAT_NAME, name) }
+            db.insert(TABLE_CATEGORIES, null, v)
         } finally {
-            cursor?.close()
             db.close()
         }
     }
 
-    // ---------------------------
-    // HÁBITOS (CRUD)
-    // ---------------------------
+    fun getAllCategories(): List<Category> {
+        val list = mutableListOf<Category>()
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT * FROM $TABLE_CATEGORIES ORDER BY $COL_CAT_NAME ASC", null)
+        cursor.use {
+            while (it.moveToNext()) {
+                list.add(
+                    Category(
+                        id = it.getInt(it.getColumnIndexOrThrow(COL_CAT_ID)),
+                        name = it.getString(it.getColumnIndexOrThrow(COL_CAT_NAME))
+                    )
+                )
+            }
+        }
+        db.close()
+        return list
+    }
 
-    /**
-     * Inserta un hábito asociado a un userId.
-     * Devuelve rowId (>0) o -1 si falla.
-     */
-    fun insertHabit(name: String, description: String, userId: Int): Long {
+    fun getCategoryById(catId: Int): Category? {
+        val db = readableDatabase
+        val cursor = db.rawQuery("SELECT * FROM $TABLE_CATEGORIES WHERE $COL_CAT_ID=?", arrayOf(catId.toString()))
+        val res = cursor.use {
+            if (it.moveToFirst()) {
+                Category(
+                    it.getInt(it.getColumnIndexOrThrow(COL_CAT_ID)),
+                    it.getString(it.getColumnIndexOrThrow(COL_CAT_NAME))
+                )
+            } else null
+        }
+        db.close()
+        return res
+    }
+
+    // -------------------
+    // HABITS
+    // -------------------
+    fun insertHabit(name: String, description: String, categoryId: Int, userId: Int): Long {
         val db = writableDatabase
         return try {
-            val values = ContentValues().apply {
+            val v = ContentValues().apply {
                 put(COL_HABIT_NAME, name)
                 put(COL_HABIT_DESC, description)
+                put(COL_HABIT_CATEGORY_ID, categoryId)
                 put(COL_HABIT_USER_ID, userId)
             }
-            db.insert(TABLE_HABITS, null, values)
+            db.insert(TABLE_HABITS, null, v)
         } finally {
             db.close()
         }
     }
 
-    /**
-     * Obtiene todos los hábitos de un usuario (ordenados por id asc).
-     */
     fun getHabitsByUser(userId: Int): List<Habit> {
+        val list = mutableListOf<Habit>()
         val db = readableDatabase
-        val habits = mutableListOf<Habit>()
-        var cursor: Cursor? = null
-        try {
-            val query = "SELECT * FROM $TABLE_HABITS WHERE $COL_HABIT_USER_ID = ? ORDER BY $COL_HABIT_ID ASC"
-            cursor = db.rawQuery(query, arrayOf(userId.toString()))
-            if (cursor.moveToFirst()) {
-                do {
-                    habits.add(cursorToHabit(cursor))
-                } while (cursor.moveToNext())
+        val cursor = db.rawQuery(
+            "SELECT * FROM $TABLE_HABITS WHERE $COL_HABIT_USER_ID=? ORDER BY $COL_HABIT_ID ASC",
+            arrayOf(userId.toString())
+        )
+        cursor.use {
+            while (it.moveToNext()) {
+                list.add(
+                    Habit(
+                        id = it.getInt(it.getColumnIndexOrThrow(COL_HABIT_ID)),
+                        name = it.getString(it.getColumnIndexOrThrow(COL_HABIT_NAME)),
+                        description = it.getString(it.getColumnIndexOrThrow(COL_HABIT_DESC)),
+                        categoryId = it.getInt(it.getColumnIndexOrThrow(COL_HABIT_CATEGORY_ID))
+                    )
+                )
             }
-        } finally {
-            cursor?.close()
-            db.close()
         }
-        return habits
+        db.close()
+        return list
     }
 
-    /**
-     * (Utilidad) Obtiene todos los hábitos de la tabla (sin filtrar).
-     * Útil para debugging. En producción puedes no usarla.
-     */
-    fun getAllHabits(): List<Habit> {
+    fun getHabitById(habitId: Int): Habit? {
         val db = readableDatabase
-        val habits = mutableListOf<Habit>()
-        var cursor: Cursor? = null
-        try {
-            cursor = db.rawQuery("SELECT * FROM $TABLE_HABITS ORDER BY $COL_HABIT_ID ASC", null)
-            if (cursor.moveToFirst()) {
-                do {
-                    habits.add(cursorToHabit(cursor))
-                } while (cursor.moveToNext())
-            }
-        } finally {
-            cursor?.close()
-            db.close()
+        val cursor = db.rawQuery("SELECT * FROM $TABLE_HABITS WHERE $COL_HABIT_ID=?", arrayOf(habitId.toString()))
+        val res = cursor.use {
+            if (it.moveToFirst()) {
+                Habit(
+                    id = it.getInt(it.getColumnIndexOrThrow(COL_HABIT_ID)),
+                    name = it.getString(it.getColumnIndexOrThrow(COL_HABIT_NAME)),
+                    description = it.getString(it.getColumnIndexOrThrow(COL_HABIT_DESC)),
+                    categoryId = it.getInt(it.getColumnIndexOrThrow(COL_HABIT_CATEGORY_ID))
+                )
+            } else null
         }
-        return habits
+        db.close()
+        return res
     }
 
-    /**
-     * Obtiene un hábito por su id, o null si no existe.
-     */
-    fun getHabitById(id: Int): Habit? {
-        val db = readableDatabase
-        var cursor: Cursor? = null
+    fun updateHabit(habitId: Int, name: String, description: String, categoryId: Int): Int {
+        val db = writableDatabase
         return try {
-            cursor = db.rawQuery("SELECT * FROM $TABLE_HABITS WHERE $COL_HABIT_ID = ?", arrayOf(id.toString()))
-            if (cursor.moveToFirst()) cursorToHabit(cursor) else null
+            val v = ContentValues().apply {
+                put(COL_HABIT_NAME, name)
+                put(COL_HABIT_DESC, description)
+                put(COL_HABIT_CATEGORY_ID, categoryId)
+            }
+            db.update(TABLE_HABITS, v, "$COL_HABIT_ID=?", arrayOf(habitId.toString()))
         } finally {
-            cursor?.close()
             db.close()
         }
     }
 
-    /**
-     * Actualiza nombre y descripción de un hábito (por id).
-     * Devuelve número de filas afectadas.
-     */
-    fun updateHabit(id: Int, name: String, description: String): Int {
+    fun deleteHabit(id: Int) {
+        val db = writableDatabase
+        try {
+            db.delete(TABLE_HABITS, "$COL_HABIT_ID=?", arrayOf(id.toString()))
+        } finally {
+            db.close()
+        }
+    }
+
+    // -------------------
+    // LOGS
+    // -------------------
+    fun insertOrUpdateLog(habitId: Int, date: String, status: Int, notes: String?): Long {
         val db = writableDatabase
         return try {
             val values = ContentValues().apply {
-                put(COL_HABIT_NAME, name)
-                put(COL_HABIT_DESC, description)
+                put(COL_LOG_HABIT_ID, habitId)
+                put(COL_LOG_DATE, date)
+                put(COL_LOG_STATUS, status)
+                put(COL_LOG_NOTES, notes)
             }
-            db.update(TABLE_HABITS, values, "$COL_HABIT_ID = ?", arrayOf(id.toString()))
+            db.insertWithOnConflict(TABLE_LOGS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
         } finally {
             db.close()
         }
     }
 
-    /**
-     * Borra un hábito por id.
-     * Devuelve número de filas eliminadas.
-     */
-    fun deleteHabit(id: Int): Int {
-        val db = writableDatabase
-        return try {
-            db.delete(TABLE_HABITS, "$COL_HABIT_ID = ?", arrayOf(id.toString()))
-        } finally {
-            db.close()
+    fun getLogsByHabit(habitId: Int): List<HabitLog> {
+        val list = mutableListOf<HabitLog>()
+        val db = readableDatabase
+        val cursor = db.rawQuery(
+            "SELECT * FROM $TABLE_LOGS WHERE $COL_LOG_HABIT_ID=? ORDER BY $COL_LOG_DATE ASC",
+            arrayOf(habitId.toString())
+        )
+        cursor.use {
+            while (it.moveToNext()) {
+                list.add(
+                    HabitLog(
+                        id = it.getInt(it.getColumnIndexOrThrow(COL_LOG_ID)),
+                        habitId = it.getInt(it.getColumnIndexOrThrow(COL_LOG_HABIT_ID)),
+                        date = it.getString(it.getColumnIndexOrThrow(COL_LOG_DATE)),
+                        status = it.getInt(it.getColumnIndexOrThrow(COL_LOG_STATUS)),
+                        notes = it.getString(it.getColumnIndexOrThrow(COL_LOG_NOTES))
+                    )
+                )
+            }
         }
-    }
-
-    // ---------------------------
-    // Helpers internos
-    // ---------------------------
-
-    /**
-     * Convierte la fila actual del cursor en un objeto Habit.
-     * Asume que el cursor está posicionado en una fila válida.
-     */
-    private fun cursorToHabit(cursor: Cursor): Habit {
-        val id = cursor.getInt(cursor.getColumnIndexOrThrow(COL_HABIT_ID))
-        val name = cursor.getString(cursor.getColumnIndexOrThrow(COL_HABIT_NAME))
-        val desc = cursor.getString(cursor.getColumnIndexOrThrow(COL_HABIT_DESC))
-        return Habit(id = id, name = name, description = desc)
+        db.close()
+        return list
     }
 }
-

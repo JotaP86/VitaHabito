@@ -1,43 +1,60 @@
 package com.vitahabitoapp
 
 import android.os.Bundle
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
-import android.widget.Toast
+import android.widget.Spinner
 import androidx.appcompat.app.AppCompatActivity
 
 class HabitFormActivity : AppCompatActivity() {
+
+    private lateinit var db: DatabaseHelper
+    private lateinit var etName: EditText
+    private lateinit var etDesc: EditText
+    private lateinit var spinnerCat: Spinner
+    private lateinit var btnSave: Button
+
+    private var categoryList = listOf<Category>()
+    private var userId = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_habit_form)
 
-        val txtName = findViewById<EditText>(R.id.editTextName)
-        val txtDescription = findViewById<EditText>(R.id.editTextDescription)
-        val btnSave = findViewById<Button>(R.id.btnSaveHabit)
+        db = DatabaseHelper(this)
+        userId = intent.getIntExtra("user_id", -1)
 
-        val db = DatabaseHelper(this)
+        etName = findViewById(R.id.etHabitName)
+        etDesc = findViewById(R.id.etHabitDesc)
+        spinnerCat = findViewById(R.id.spinnerCategory)
+        btnSave = findViewById(R.id.btnSaveHabit)
 
-        // -> Recibimos el userId desde la pantalla anterior
-        val userId = intent.getIntExtra("userId", -1)
+        loadCategories()
 
         btnSave.setOnClickListener {
-            val name = txtName.text.toString().trim()
-            val desc = txtDescription.text.toString().trim()
+            val name = etName.text.toString().trim()
+            val desc = etDesc.text.toString().trim()
 
-            if (name.isEmpty() || desc.isEmpty()) {
-                Toast.makeText(this, "Completa todos los campos", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
+            val position = spinnerCat.selectedItemPosition
+            val categoryId = categoryList[position].id
 
-            val result = db.insertHabit(name, desc, userId)
+            db.insertHabit(name, desc, categoryId, userId)
 
-            if (result > 0) {
-                Toast.makeText(this, "Hábito guardado", Toast.LENGTH_SHORT).show()
-                finish()  // vuelve a la lista
-            } else {
-                Toast.makeText(this, "Error al guardar", Toast.LENGTH_SHORT).show()
-            }
+            finish()
         }
+    }
+
+    private fun loadCategories() {
+        categoryList = db.getAllCategories()
+
+        val adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            categoryList.map { it.name }
+        )
+
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerCat.adapter = adapter
     }
 }
