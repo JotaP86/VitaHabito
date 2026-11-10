@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.vitahabitoapp">
+
+    <application
+        android:allowBackup="true"
+        android:label="VitaHabito"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.VitaHabitoApp">
+
+        <!-- Actividad inicial (launcher) -->
+        <activity
+            android:name=".LoginActivity"
+            android:exported="true"
+            android:label="Login" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Resto de actividades: android:exported explícito (requerido en Android 12+) -->
+        <activity
+            android:name=".RegisterActivity"
+            android:exported="false"
+            android:label="Register" />
+
+        <activity
+            android:name=".MenuActivity"
+            android:exported="false"
+            android:label="Menu" />
+
+        <activity
+            android:name=".HabitListActivity"
+            android:exported="false"
+            android:label="Habitos" />
+
+        <activity
+            android:name=".HabitFormActivity"
+            android:exported="false"
+            android:label="Añadir Hábito" />
+
+        <activity
+            android:name=".HabitDetailActivity"
+            android:exported="false"
+            android:label="Detalle Hábito" />
+
+        <activity
+            android:name=".HabitEditActivity"
+            android:exported="false"
+            android:label="Editar Hábito" />
+
+    </application>
+
+</manifest>

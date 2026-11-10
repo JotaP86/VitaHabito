@@ -1,0 +1,32 @@
+# Gradle
+.gradle/
+build/
+/captures
+.externalNativeBuild
+.cxx
+
+# Configuracion local (ruta del SDK, no se versiona)
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+
+# Kotlin
+.kotlin/
+
+# Binarios generados
+*.apk
+*.aab
+
+# Claves de firma y configuracion de servicios
+*.jks
+*.keystore
+google-services.json
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# El wrapper de Gradle si se versiona
+!gradle/wrapper/gradle-wrapper.jar
