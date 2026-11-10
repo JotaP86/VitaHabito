@@ -27,7 +27,6 @@ class HabitDetailActivity : AppCompatActivity() {
 
         txtName = findViewById(R.id.txtDetailName)
         txtDescription = findViewById(R.id.txtDetailDescription)
-        // txtDetailCategory puede no existir en tu layout; si no existe, crea uno o comenta la línea
         val catExists = resources.getIdentifier("txtDetailCategory", "id", packageName) != 0
         if (catExists) {
             txtCategory = findViewById(R.id.txtDetailCategory)

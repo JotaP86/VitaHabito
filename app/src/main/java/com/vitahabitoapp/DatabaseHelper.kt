@@ -12,18 +12,18 @@ class DatabaseHelper(context: Context) :
         const val DB_NAME = "vitahabito.db"
         const val DB_VERSION = 5
 
-        // USERS
+        // Tabla de usuarios
         const val TABLE_USERS = "users"
         const val COL_USER_ID = "id"
         const val COL_USERNAME = "username"
         const val COL_PASSWORD = "password"
 
-        // CATEGORIES
+        // Tabla de categorías
         const val TABLE_CATEGORIES = "categories"
         const val COL_CAT_ID = "id"
         const val COL_CAT_NAME = "name"
 
-        // HABITS
+        // Tabla de hábitos
         const val TABLE_HABITS = "habits"
         const val COL_HABIT_ID = "id"
         const val COL_HABIT_NAME = "name"
@@ -31,7 +31,7 @@ class DatabaseHelper(context: Context) :
         const val COL_HABIT_USER_ID = "user_id"
         const val COL_HABIT_CATEGORY_ID = "category_id"
 
-        // LOGS
+        // Tabla del registro diario
         const val TABLE_LOGS = "habit_logs"
         const val COL_LOG_ID = "id"
         const val COL_LOG_HABIT_ID = "habit_id"
@@ -90,7 +90,7 @@ class DatabaseHelper(context: Context) :
         db.execSQL(createHabits)
         db.execSQL(createLogs)
 
-        // Insert default categories
+        // Categorías por defecto
         db.execSQL("INSERT INTO $TABLE_CATEGORIES ($COL_CAT_NAME) VALUES ('Salud')")
         db.execSQL("INSERT INTO $TABLE_CATEGORIES ($COL_CAT_NAME) VALUES ('Productividad')")
         db.execSQL("INSERT INTO $TABLE_CATEGORIES ($COL_CAT_NAME) VALUES ('Personal')")
@@ -104,9 +104,7 @@ class DatabaseHelper(context: Context) :
         onCreate(db)
     }
 
-    // -------------------
-    // USERS
-    // -------------------
+    // Usuarios
     fun registerUser(username: String, password: String): Long {
         val db = writableDatabase
         return try {
@@ -131,9 +129,7 @@ class DatabaseHelper(context: Context) :
         return res
     }
 
-    // -------------------
-    // CATEGORIES
-    // -------------------
+    // Categorías
     fun insertCategory(name: String): Long {
         val db = writableDatabase
         return try {
@@ -177,9 +173,7 @@ class DatabaseHelper(context: Context) :
         return res
     }
 
-    // -------------------
-    // HABITS
-    // -------------------
+    // Hábitos
     fun insertHabit(name: String, description: String, categoryId: Int, userId: Int): Long {
         val db = writableDatabase
         return try {
@@ -258,9 +252,7 @@ class DatabaseHelper(context: Context) :
         }
     }
 
-    // -------------------
-    // LOGS
-    // -------------------
+    // Registro diario
     fun insertOrUpdateLog(habitId: Int, date: String, status: Int, notes: String?): Long {
         val db = writableDatabase
         return try {
