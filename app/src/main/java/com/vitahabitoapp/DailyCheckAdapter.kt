@@ -15,6 +15,8 @@ class DailyCheckAdapter(
     private val onCheckChanged: (Habit, Boolean) -> Unit
 ) : BaseAdapter() {
 
+    private val checked = logs.toMutableMap()
+
     override fun getCount(): Int = habits.size
     override fun getItem(i: Int): Habit = habits[i]
     override fun getItemId(i: Int): Long = habits[i].id.toLong()
@@ -28,9 +30,12 @@ class DailyCheckAdapter(
         val check = view.findViewById<CheckBox>(R.id.cbDone)
 
         txtName.text = habit.name
-        check.isChecked = logs[habit] == true
+        // La fila puede ser reutilizada: se quita el listener anterior antes de fijar el estado
+        check.setOnCheckedChangeListener(null)
+        check.isChecked = checked[habit] == true
 
         check.setOnCheckedChangeListener { _, isChecked ->
+            checked[habit] = isChecked
             onCheckChanged(habit, isChecked)
         }
 
