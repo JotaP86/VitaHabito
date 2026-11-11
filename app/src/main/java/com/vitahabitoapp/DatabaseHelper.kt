@@ -243,10 +243,18 @@ class DatabaseHelper(context: Context) :
         }
     }
 
+    // Borra primero los registros diarios del hábito para no violar la clave foránea de habit_logs
     fun deleteHabit(id: Int) {
         val db = writableDatabase
         try {
-            db.delete(TABLE_HABITS, "$COL_HABIT_ID=?", arrayOf(id.toString()))
+            db.beginTransaction()
+            try {
+                db.delete(TABLE_LOGS, "$COL_LOG_HABIT_ID=?", arrayOf(id.toString()))
+                db.delete(TABLE_HABITS, "$COL_HABIT_ID=?", arrayOf(id.toString()))
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
+            }
         } finally {
             db.close()
         }

@@ -17,6 +17,7 @@ class MenuActivity : AppCompatActivity() {
 
         val btnAddHabit = findViewById<Button>(R.id.btnAddHabit)
         val btnViewHabits = findViewById<Button>(R.id.btnViewHabits)
+        val btnDailyCheck = findViewById<Button>(R.id.btnDailyCheck)
 
         btnAddHabit.setOnClickListener {
             val intent = Intent(this, HabitFormActivity::class.java)
@@ -26,6 +27,12 @@ class MenuActivity : AppCompatActivity() {
 
         btnViewHabits.setOnClickListener {
             val intent = Intent(this, HabitListActivity::class.java)
+            intent.putExtra("user_id", userId)
+            startActivity(intent)
+        }
+
+        btnDailyCheck.setOnClickListener {
+            val intent = Intent(this, DailyCheckActivity::class.java)
             intent.putExtra("user_id", userId)
             startActivity(intent)
         }
