@@ -5,6 +5,7 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 class HabitFormActivity : AppCompatActivity() {
@@ -35,6 +36,11 @@ class HabitFormActivity : AppCompatActivity() {
         btnSave.setOnClickListener {
             val name = etName.text.toString().trim()
             val desc = etDesc.text.toString().trim()
+
+            if (name.isEmpty()) {
+                Toast.makeText(this, "El nombre no puede estar vacío", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
             val position = spinnerCat.selectedItemPosition
             val categoryId = categoryList[position].id
